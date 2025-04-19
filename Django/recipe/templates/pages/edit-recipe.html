@@ -1,0 +1,65 @@
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My-secret-recipe.add-recipe</title>
+    <link rel="stylesheet" href="{% static 'css/add-recipe.css' %}">
+</head>
+<body>
+{% include "partials/header.html" %}
+    <section>
+        <form class="my-form" action="{% url 'my_secret_recipe:edit_recipe' recipe.id %}" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <ul>
+                    {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+            <div>
+                {% for error in form.name.errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+                <label for="name">Name</label>
+                <input type="text" name="name" required {% if form.name.value %} value="{{ form.name.value }}"{% endif %}>
+            </div>
+            <div>
+                {% for error in form.ingredients.errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+                <label for="ingredients">Ingredients</label>
+                <textarea name="ingredients" id="" required>{{ form.ingredients.value|default_if_none:'' }}</textarea>
+            </div>
+            <div>
+                {% for error in form.instructions.errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+                <label for="instructions">Instructions</label>
+                <textarea name="instructions" required>{{ form.instructions.value|default_if_none:'' }}</textarea>
+            </div>
+            <div>
+                {% for error in form.cooking_time.errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+                <label for="cooking_time">Cooking Time</label>
+                <input type="number" min="1" name="cooking_time" required {% if form.cooking_time.value %} value="{{ form.cooking_time.value }}"{% endif %}>
+            </div> 
+            <div>
+                {% for error in form.dish_image.errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+                {% if form.instance.dish_image %}
+                    <img src="{{ form.instance.dish_image.url}}"  height="120px" width="200px" alt="Default Image">
+                {% endif %}
+                <label for="dish_image">Existing Dish Image</label>
+                <input type="file" name="dish_image">
+            </div>
+
+            <button type="submit">Edit recipe</button>
+        </form>
+            
+    </section>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{% load static %}
+{% block head %}
+    <link rel="stylesheet" href="{% static 'css/header.css'%}">
+{% endblock head %}
+{% block content %}
+    <nav class='nav'>
+        <a href="{% url 'my_secret_recipe:add_recipe' %}"><span>Add Recipe</span></a>
+        <a href="{% url 'my_secret_recipe:view_recipes' %}"><span>View Recipe</span></a>
+    </nav>
+<script src="{% static 'js/add-recipe.js' %}"></script>
+{% endblock content %}

@@ -1,0 +1,44 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My-secret-recipe.view-recipes</title>
+    <link rel="stylesheet" href="{% static 'css/view-recipes.css' %}">
+</head>
+<body>
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+    {% include "partials/header.html" %}
+    <section>
+        <nav>
+            <form action="{% url 'my_secret_recipe:view_recipes' %}" method="GET">
+                {% comment %} <label for="name">Search</label> {% endcomment %}
+                <input type="text" name="name">
+                <button type="submit">Search</button>
+            </form>
+        </nav>
+        
+                
+        <article>
+        {% for recipe in recipes %}
+            <div>
+                {% if recipe.dish_image %}
+                    <img height="200px" src="{{ recipe.dish_image.url }}" alt="No Image available">
+                {% endif %}
+                <span>Name- {{ recipe.name }}</span>
+                <span>Ingredients- {{ recipe.ingredients }}</span>
+                <span>Instructions- {{ recipe.instructions }}</span>
+                <span>Cooking Time- {{ recipe.cooking_time }} Mins</span>
+                <button><a href="{% url 'my_secret_recipe:delete_recipe' recipe.id %}">Delete</a></button>
+                <button><a href="{% url 'my_secret_recipe:edit_recipe' recipe.id %}">Edit</a></button>
+                </div>            
+        {% endfor %}
+        </article>
+    </section>
+</body>
+</html>
