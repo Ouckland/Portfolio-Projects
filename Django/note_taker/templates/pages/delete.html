@@ -1,0 +1,21 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="{% static 'css/delete-note.css' %}">
+</head>
+<body>
+    <div>
+        <h1>Delete Note</h1>
+        <p>Are you sure you want to delete {{note.title }}</p>
+        <form action="{% url 'notes:delete_note' note.id %}" method="POST">
+            {% csrf_token %}
+            <button type="submit" class='yes-button'>Yes</button>
+            <a href="{% url 'notes:note_detail' note.id%}" class='no-link'>No, Take me back</a>
+        </form>
+    </div>
+</body>
+</html>

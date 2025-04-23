@@ -1,0 +1,21 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="{% static 'css/add-note.css' %}">
+</head>
+<body>
+    <section>
+        <div>
+            <form action="{% url 'notes:edit_note' note.id %}" method="post">
+                {% csrf_token %}
+                {{ edit_form.as_div }}
+                <button type="submit">Edit Note</button>
+            </form>
+        </div>
+    </section>
+</body>
+</html>

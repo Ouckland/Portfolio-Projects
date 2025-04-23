@@ -1,0 +1,33 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Notes | Home</title>
+  <link rel="stylesheet" href="{% static 'css/home.css' %}">
+</head>
+<body>
+  {% include "partials/header.html" %}
+  <div class="messages">
+    {% if messages %}
+      {% for message in messages %}
+        <span class="message-{{ message.tags}}">
+          {{ message }}
+        </span>
+      {% endfor %}
+    {% endif %}
+  </div>
+  <section>
+    <h3>Welcome to NotesOrganizer</h3>
+    <p>Your thoughts, organized</p>
+    <span>
+      Take notes, keep track of ideas, and stay organized with Notes. Our simple and intuitive platform helps you capture and store your thoughts, anytime, anywhere.
+    </span>
+    <div>
+      <a href="{% url 'notes:add_note' %}">Add Note</a>
+      <a href="{% url 'notes:view_notes' %}">View Notes Added</a>
+    </div>
+  </section>
+</body>
+</html>

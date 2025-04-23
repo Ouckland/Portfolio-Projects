@@ -1,0 +1,26 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>notes/sign/up</title>
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+</head>
+<body>
+    <section>
+        <h1>CREATE AN ACCOUNT</h1>
+        <div>
+        <form action="{% url 'users:sign_up' %}" method="POST">
+            {% csrf_token %}
+            {{ form.as_p}}
+            <div>
+                <button type="submit">Sign up</button>
+                <p>Already have an account? <a href="{% url 'users:login' %}">Login</a></p>
+            </div>
+        </form>
+        </div>
+    </section>
+</body>
+</html>

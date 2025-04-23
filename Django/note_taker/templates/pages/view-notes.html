@@ -1,0 +1,51 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>View Notes</title>
+  <link rel="stylesheet" href="{% static 'css/view-notes.css' %}">
+</head> 
+<body>
+  {% include "partials/header.html" %}
+  <div class="messages">
+    {% if messages %}
+      {% for message in messages %}
+        <span class="message-{{ message.tags}}">
+          {{ message }}
+        </span>
+      {% endfor %}
+    {% endif %}
+  </div>
+  <section>
+    <div class="filter-area">
+      <form action="{% url 'notes:view_notes' %}" method="GET">
+        <input type="text" name="title" placeholder="Search notes..." />
+        <button type="submit">Search</button>
+      </form>
+
+      <form action="{% url 'notes:view_notes' %}" method="GET">
+        <label for="category">Category</label>
+        <select name="category">
+          {% for value, label in filter_form.category.field.choices %}
+            <option value="{{ value }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit">Filter</button>
+      </form>
+    </div>
+
+    <div class="notes-list">
+      {% for note in all_notes %}
+        <div class="note-card">
+          <span>Title - {{note.title}}</span>
+          <a href="{% url 'notes:note_detail' note.id %}">View Note Details</a>
+        </div>
+      {% empty %}
+        <p>No notes found.</p>
+      {% endfor %}
+    </div>
+  </section>
+</body>
+</html>

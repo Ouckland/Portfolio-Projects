@@ -1,0 +1,23 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Add Note</title>
+  <link rel="stylesheet" href="{% static 'css/add-note.css' %}">
+</head>
+<body>
+  {% include "partials/header.html" %}
+
+  <div class="form-wrapper">
+    <h2>Add a New Note</h2>
+    <form action="{% url 'notes:add_note' %}" method="POST">
+      {% csrf_token %}
+      {{ note_form.as_div }}
+      <button type="submit">Add Note</button>
+    </form>
+  </div>
+</body>
+</html>
