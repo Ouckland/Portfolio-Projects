@@ -29,7 +29,7 @@ class EmailSignupForm(forms.Form):
         
         return password
 
-class PassewordResetRequestForm(forms.Form):
+class PasswordResetRequestForm(forms.Form):
     email = forms.EmailField(widget=forms.EmailInput(attrs={'placeholder': 'Email'}))
 
 class PasswordResetForm(forms.Form):
@@ -92,6 +92,15 @@ class EmployerBasicInfoForm(forms.Form):
     state = forms.CharField()
     description = forms.CharField(widget=forms.Textarea)
 
+    @classmethod
+    def get_instance(cls, user):
+        return {
+            'company_name': user.employererprofile.company_name,
+            'contact_number': user.employerprofile.contact_number,
+            'country': user.employerprofile.country,
+            'state': user.employerprofile.state,
+            'description': user.employerprofile.description
+        }
 
 
 class EmployerAccountForm(forms.ModelForm):
@@ -114,6 +123,15 @@ class SeekerBasicInfoForm(forms.Form):
     state = forms.CharField()
     bio = forms.CharField(widget=forms.Textarea)
 
+    @classmethod
+    def get_instance(cls, user):
+        return {
+            'full_name': user.seekerprofile.full_name,
+            'phone_number': user.seekerprofile.phone_number,
+            'country': user.seekerprofile.country,
+            'state': user.seekerprofile.state,
+            'bio': user.seekerprofile.bio
+        }
 
 from .models import SeekerProfile
 
@@ -122,12 +140,11 @@ class SeekerAccountForm(forms.ModelForm):
         model = SeekerProfile
         fields = [
             'skills', 'experience', 'education', 'certifications', 
-            'resume', 'profile_picture', 'bio', 'job_type', 'linkedin','portfolio'
+            'resume', 'profile_picture', 'job_type', 'linkedin','portfolio'
         ]
 
 
         widgets = {
-            'bio': forms.Textarea(attrs={'rows': 4}),
             'skills': forms.Textarea(attrs={'rows': 4}),
             'experience': forms.Textarea(attrs={'rows': 4}),
             'education': forms.Textarea(attrs={'rows': 4}),

@@ -1,0 +1,20 @@
+{% extends "partials/base.html" %}
+{% block content %}
+    {% include "partials/header.html" %}
+
+    <h2>Applications for {{ job.title }}</h2>
+
+    {% if applications %}
+    <ul>
+        {% for app in applications %}
+        <li>
+            <strong>{{ app.applicant.user.get_full_name }}</strong><br>
+            Applied on: {{ app.application_date|date:"F j, Y" }}<br>
+            <a href="{% url 'jobs:view_application_detail' app.id %}">View Details</a>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>No applications yet.</p>
+    {% endif %}
+{% endblock content %}

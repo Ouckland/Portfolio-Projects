@@ -1,0 +1,36 @@
+{% extends "partials/base.html" %}
+{% block content %}
+    {% include "partials/header.html" %}
+
+    <section style="padding: 2rem;">
+        <h2>Apply for {{ job.title }}</h2>
+        <p><strong>Employer:</strong> {{ job.employer }}</p>
+        <p><strong>Location:</strong> {{ job.location }}</p>
+        <p><strong>Deadline:</strong> {{ job.deadline }}</p>
+
+        <form action="{% url 'jobs:apply_for_job' job.id %}" method="POST" enctype="multipart/form-data" style="margin-top: 1.5rem;">
+            {% csrf_token %}
+            
+            <div style="margin-bottom: 1rem;">
+                {{ form.cover_letter.label_tag }}<br>
+                {{ form.cover_letter }}
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                {{ form.resume.label_tag }}<br>
+                {{ form.resume }}
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                {{ form.attachments.label_tag }}<br>
+                {{ form.attachments }}
+            </div>
+
+            <button type="submit">✅ Submit Application</button>
+        </form>
+
+        <div style="margin-top: 1rem;">
+            <a href="{% url 'jobs:view_job_detail' job.id %}">← Back to Job Details</a>
+        </div>
+    </section>
+{% endblock content %}

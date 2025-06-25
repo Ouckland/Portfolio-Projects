@@ -1,8 +1,9 @@
 work to do
 -- change console to email.backend
---  fix the base.htm to login.html bug, precisely block title
---             -password reset via e-mail
---    Validation for models in the file and image uploads
+-- Configure the django signals for file deletion in the models(signals.py)
+-- Move to the main jobs app, create the neccessarry models and forms
+-- Implement notifications using django channels / django notifications hq
+
 --  otp verification input styling using html and css
 -- Implement apis for all the fields needing it in the profile models for both parties
 

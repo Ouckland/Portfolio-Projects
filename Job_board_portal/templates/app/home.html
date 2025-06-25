@@ -1,0 +1,6 @@
+{% extends "partials/base.html" %}
+{% block content %}
+    {% include "partials/header.html" %}
+    <div>Welcome to Job Board</div>
+    <a href="{% url 'users:email_sign_up' %}">Get started</a>
+{% endblock content %}  

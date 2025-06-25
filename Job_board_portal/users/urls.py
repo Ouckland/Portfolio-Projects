@@ -1,7 +1,5 @@
 from django.urls import path
 from . import views
-from django.conf.urls.static import static
-from django.conf import settings
 
 
 app_name = 'users'
@@ -16,12 +14,8 @@ urlpatterns = [
     path('forgot-password/', views.forgot_password, name='forgot_password'),
     path('validate-reset-otp/<str:user_email>/', views.validate_reset_otp, name='validate_reset_otp'),
     path('resend-reset-otp/<str:user_email>/', views.resend_reset_otp, name='resend_reset_otp'),
-    path('reset-password/<str:user_email>', views.reset_password, name='reset_password')
-
-
+    path('reset-password/', views.reset_password, name='reset_password'),
+    path('logout/', views.logout_view, name='logout'),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(
-        settings.MEDIA_URL, document_root=settings.MEDIA_ROOT
-    )
+

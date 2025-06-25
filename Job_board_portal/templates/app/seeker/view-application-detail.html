@@ -1,0 +1,63 @@
+{% extends "partials/base.html" %}
+{% block content %}
+    {% include "partials/header.html" %}
+
+    <section style="max-width: 700px; margin: 2rem auto; padding: 1.5rem; border: 1px solid #ddd; border-radius: 10px;">
+        <h2 style="margin-bottom: 1rem; font-size: 1.5rem;">
+            Application for: <span style="color: #333;">{{ application.job.title }}</span>
+        </h2>
+
+        <div style="margin-bottom: 1rem;">
+            <h3>Applicant Info</h3>
+            <p><strong>Name:</strong> {{ application.applicant.full_name }}</p>
+            <p><strong>Email:</strong> {{ application.applicant.user.email }}</p>
+            <p><strong>Bio:</strong> {{ application.applicant.bio }}</p>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+            <h3>Cover Letter</h3>
+            <p style="white-space: pre-line;">{{ application.cover_letter }}</p>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+            <h3>Resume</h3>
+            <a href="{{ application.resume.url }}" download style="color: #007bff; text-decoration: underline;">
+                Download Resume
+            </a>
+        </div>
+
+        {% if application.attachments %}
+            <div style="margin-bottom: 1rem;">
+                <h3>Attachment</h3>
+                <a href="{{ application.attachments.url }}" download style="color: #007bff; text-decoration: underline;">
+                    Download Attachment
+                </a>
+            </div>
+        {% endif %}
+
+        {% if application.status == 'accepted' %}
+            <strong>Status:<span style="color: green;">  {{ application.get_status_display }}</span></strong>
+        {% elif application.status == 'rejected' %}
+            <strong>Status:<span style="color: red;">  {{ application.get_status_display }}</span></strong>
+        {% else %}
+            <strong>Status:<span>  {{ application.get_status_display }}</span></strong>
+        {% endif %}
+
+        <p><strong>Applied on:</strong> {{ application.application_date|date:"F j, Y" }}</p>
+
+        <div style="margin-top: 2rem;">
+            {% if is_seeker and application.status == 'pending' %}
+                <a href="{% url 'jobs:update_application' application.id %}" style="margin-right: 1rem; padding: 0.5rem 1rem; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px;">
+                    Update Application
+                </a>
+                <a href="{% url 'jobs:delete_application' application.id %}" style="padding: 0.5rem 1rem; background-color: #d32f2f; color: white; text-decoration: none; border-radius: 5px;">
+                    Delete Application
+                </a>
+            {% elif is_employer %}
+                <a href="{% url 'jobs:review_application' application.id %}" style="padding: 0.5rem 1rem; background-color: #1976d2; color: white; text-decoration: none; border-radius: 5px;">
+                    Review Application
+                </a>
+            {% endif %}
+        </div>
+    </section>
+{% endblock content %}

@@ -1,0 +1,31 @@
+{% extends "partials/base.html" %}
+{% block content %}
+    {% include "partials/header.html" %}
+
+    <section style="max-width: 700px; margin: 2rem auto; padding: 2rem; border: 1px solid #ddd; border-radius: 10px;">
+        <h2 style="margin-bottom: 1.5rem;">Update Your Application for <em>{{ application.job.title }}</em></h2>
+
+        <form action="{% url 'jobs:update_application' application.id %}" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div style="margin-bottom: 1rem;">
+                <label for="id_cover_letter">Cover Letter:</label><br>
+                {{ form.cover_letter }}
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label for="id_resume">Resume:</label><br>
+                {{ form.resume }}
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label for="id_attachments">Attachment (Optional):</label><br>
+                {{ form.attachments }}
+            </div>
+
+            <button type="submit" style="padding: 0.6rem 1.5rem; background-color: #4CAF50; color: white; border: none; border-radius: 5px;">
+                Update Application
+            </button>
+        </form>
+    </section>
+{% endblock content %}

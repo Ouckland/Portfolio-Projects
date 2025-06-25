@@ -1,0 +1,80 @@
+{% extends "partials/base.html" %}
+{% block content %}
+    {% include "partials/header.html" %}
+
+    <section>
+        <h2>Post a New Job</h2>
+        <form action="{% url 'jobs:add_job' %}" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div>
+                <label for="id_title">Job Title:</label>
+                <input type="text" name="title" id="id_title" required>
+            </div>
+
+            <div>
+                <label for="id_job_type">Job Type:</label>
+                <select name="job_type" id="id_job_type">
+                    {% for choice in job_form.fields.job_type.choices %}
+                        <option value="{{ choice.0 }}">{{ choice.1 }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label for="id_location">Location:</label>
+                <input type="text" name="location" id="id_location" required>
+            </div>
+
+            <div>
+                <label for="id_salary">Salary (₦):</label>
+                <input type="number" name="salary" id="id_salary" required>
+            </div>
+
+            <div>
+                <label for="id_experience_required">Experience Required (years):</label>
+                <input type="number" name="experience_required" id="id_experience_required" min="0" step="1" required>
+            </div>
+
+            <div>
+                <label for="id_qualifications">Qualifications:</label>
+                <textarea name="qualifications" id="id_qualifications" rows="4"></textarea>
+            </div>
+
+            <div>
+                <label for="id_deadline">Application Deadline:</label>
+                <input type="date" name="deadline" id="id_deadline" required>
+            </div>
+
+            <div>
+                <label for="id_job_category">Job Category:</label>
+                {% comment %} <select name="job_category" id="id_job_category">
+                    {% for choice in job_form.fields.job_category.choices %}
+                        <option value="{{ choice.0 }}">{{ choice.1 }}</option>
+                    {% endfor %} {% endcomment %}
+                    {% comment %} <label for="id_job_category">Job Title:</label> {% endcomment %}
+                <input type="text" name="job_category" id="id_job_category" required>
+            </div>
+                </select>
+            </div>
+
+            <div>
+                <label for="id_job_status">Job Status:</label>
+                <select name="job_status" id="id_job_status">
+                    {% for choice in job_form.fields.job_status.choices %}
+                        <option value="{{ choice.0 }}">{{ choice.1 }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label for="id_skills_required">Skills Required:</label>
+                <textarea name="skills_required" id="id_skills_required" rows="3" placeholder="E.g., Python, Django, Communication"></textarea>
+            </div>
+
+            <div>
+                <button type="submit">Submit Job</button>
+            </div>
+        </form>
+    </section>
+{% endblock content %}

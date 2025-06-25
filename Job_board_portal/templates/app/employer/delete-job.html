@@ -1,0 +1,18 @@
+{% extends "partials/base.html" %}
+{% block content %}
+    {% include "partials/header.html" %}
+
+    <section style="padding: 2rem;">
+        <h2>Confirm Deletion</h2>
+        <div>
+            <p>Are you sure you want to delete the job <strong>{{ job.title }}</strong>?</p>
+
+            <form action="{% url 'jobs:delete_job' job.id %}" method="POST" style="margin-bottom: 1rem;">
+                {% csrf_token %}
+                <button type="submit">✅ Yes, Delete</button>
+            </form>
+
+            <a href="{% url 'jobs:view_job_detail' job.id %}">❌ No, Take me back</a>
+        </div>
+    </section>
+{% endblock content %}

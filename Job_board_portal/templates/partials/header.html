@@ -1,0 +1,31 @@
+
+{% block header %}
+    {% if request.user.is_authenticated %}
+        <nav class="dash-nav">
+          <a href="{% url 'jobs:dashboard' %}">Dashboard</a>
+          <form action="{% url 'users:logout' %}" method="POST" class="nav-right">
+            {% csrf_token %}
+            <button type="submit" class="logout-btn">Logout</button>
+          </form>
+        <a href="{% url 'jobs:view_profile' %}">Profile</a>
+        {% comment %} <a href="{% url 'messaging:chat_view' %}"> {% endcomment %}
+            Messages {% if unread_count > 0 %}<span class="badge">{{ unread_count }}</span>{% endif %}
+        </a>
+
+
+        {% if notifications %}
+          <a href="{% url 'jobs:notifications' %}">Notifications <span>{{ unread_count }}</span></a>
+        
+
+        {% else %}
+          <a href="{% url 'jobs:notifications' %}">Notifications</a>
+        {% endif %}
+        </nav>
+    {% else %}
+        <nav>
+            <a href="#">Contact</a>
+            <a href="{% url 'users:login' %}">Login</a>
+        </nav>
+    {% endif %}
+{% endblock header %} 
+

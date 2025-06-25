@@ -1,17 +1,48 @@
 {% extends 'partials/base.html' %}
 {% load static %}
+
 {% block title %}
-    jobsphere/account-type/
+    <title>Choose Account Type | Jobsphere</title>
 {% endblock title %}
+
 {% block head %}
-  <link rel="stylesheet" href="{% static 'css/account-type.css'  %}">
+    <link rel="stylesheet" href="{% static 'css/account-type.css' %}">
 {% endblock head %}
 
 {% block content %}
-  <h2>Choose Account Type</h2>
-  <form method="POST" action="{% url 'users:choose_account_type' %}">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Continue</button>
-  </form>
-{% endblock content%}
+<div style="max-width: 500px; margin: auto; padding: 2rem;">
+    <h2 style="text-align: center; margin-bottom: 2rem;">Choose Your Account Type</h2>
+
+    <form method="POST" action="{% url 'users:choose_account_type' %}" style="display: flex; flex-direction: column; gap: 1.5rem;">
+        {% csrf_token %}
+
+        <!-- Username Field -->
+        <div>
+            <label for="{{ form.username.id_for_label }}"><strong>Username</strong></label><br>
+            {{ form.username }}
+            {% if form.username.errors %}
+                <p style="color: red;">{{ form.username.errors.0 }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Account Type Field -->
+        <div>
+            <label><strong>Account Type</strong></label><br>
+            {% for radio in form.account_type %}
+                <div style="margin-bottom: 0.5rem;">
+                    <label style="cursor: pointer;">
+                        {{ radio.tag }}
+                        {{ radio.choice_label }}
+                    </label>
+                </div>
+            {% endfor %}
+            {% if form.account_type.errors %}
+                <p style="color: red;">{{ form.account_type.errors.0 }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Submit -->
+        <button type="submit" style="margin-top: 1rem;">Continue</button>
+    </form>
+</div>
+{% endblock content %}

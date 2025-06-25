@@ -2,11 +2,30 @@ from django.core.files.images import get_image_dimensions
 from django.core.validators import FileExtensionValidator
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils.text import slugify
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from datetime import timedelta
 
 User = get_user_model()
+
+# class Country(models.Model):
+#     name = models.CharField(max_length=100)
+#     code = models.CharField(max_length=5, unique=True)
+
+#     def __str__(self):
+#         return f'{self.name}'
+    
+# # models.py
+# class State(models.Model):
+#     country = models.ForeignKey(Country, on_delete=models.CASCADE)
+#     name = models.CharField(max_length=100)
+
+#     class Meta:
+#         unique_together = ('country', 'name')
+
+#     def __str__(self):
+#         return f"{self.name}, {self.country.name}"
 
 class OTP(models.Model):
     user_email = models.EmailField(unique=True)
@@ -24,12 +43,20 @@ class Profile(models.Model):
         ('seeker', 'Job Seeker'),
     ]
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    account_type = models.CharField(max_length=10, choices=ACCOUNT_CHOICES, default=ACCOUNT_CHOICES[0])
-    country = models.CharField(default='Nigeria')
-    state = models.CharField(default='OYO')
+    account_type = models.CharField(max_length=10, choices=ACCOUNT_CHOICES, default=ACCOUNT_CHOICES[0][0])
+    # country = models.ForeignKey(Country, on_delete=models.CASCADE, null=True)
+    # state = models.ForeignKey(State, on_delete=models.CASCADE, null=True)
+    country = models.CharField(max_length=100, default='Nigeria')
+    state = models.CharField(max_length=100, default='Oyo')
+    
+    # def save(self, *args, **kwargs):
+    #     if not self.country:
+    #         self.country = Country.objects.get(id=1)
+    #         super().save(*args, **kwargs)
 
     class Meta:
         abstract = True
+
 
 
 class EmployerProfile(Profile):
@@ -82,3 +109,31 @@ class SeekerProfile(Profile):
 
     def __str__(self):
         return f'{self.full_name} - {self.user.email}'
+
+
+
+
+
+
+
+
+
+class KnownDevice(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='known_devices')
+    user_agent = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.user_agent[:30]}"
+
+
+class SecurityLog(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    event = models.CharField(max_length=100)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return f'{self.user} --> {self.event}'
+    
