@@ -1,19 +1,34 @@
 {% load static %}
 {% block title %}
    <title> Jobsphere</title>
-   {% endblock title %}
+{% endblock title %}
 {% block head %}
   <link rel="stylesheet" href="{% static 'css/base.css' %}">
 {% endblock head %}
-    {% if messages %}
-      <div>
-        {% for message in messages %}
-          <span>
+      {% if messages %}
+    <div class="messages-container">
+      {% for message in messages %}
+        <span class="message-{{ message.tags }}">
+          {{ message }}
+          <button class="message-close" aria-label="Close">&times;</button>
+        </span>
+      {% endfor %}
+    </div>
 
-            {{ message }}
-          </span>
-        {% endfor %}
-      </div>
-  {% endif %}
-  
+      <script>
+        // Auto-hide after 7s, allow manual close, animate out
+        document.querySelectorAll('[class^="message-"]').forEach(function(msg) {
+          setTimeout(function() {
+            msg.classList.add('hide');
+            setTimeout(function(){ msg.style.display = 'none'; }, 1500);
+          }, 7000); // 7 seconds
+          msg.querySelector('.message-close').onclick = function(e) {
+            e.stopPropagation();
+            msg.classList.add('hide');
+            setTimeout(function(){ msg.style.display = 'none'; }, 1500);
+          };
+        });
+      </script>
+    {% endif %}
+
   {% block content %}{% endblock content %}

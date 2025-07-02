@@ -1,9 +1,10 @@
 import re
-from .models import EmployerProfile
+from .models import EmployerProfile, SeekerProfile
 from django import forms
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from .models import Country, State, COMPANY_SIZE_CHOICES
 from .models import OTP
 
 User = get_user_model()
@@ -88,9 +89,29 @@ class ChooseAccountTypeForm(forms.Form):
 class EmployerBasicInfoForm(forms.Form):
     company_name = forms.CharField(max_length=100)
     contact_number = forms.CharField(max_length=15)
-    country = forms.CharField()
-    state = forms.CharField()
+    country = forms.ModelChoiceField(queryset=Country.objects.all().order_by('name'), empty_label="Select Country")
+    state = forms.ModelChoiceField(queryset=State.objects.none(), empty_label="Select State")
     description = forms.CharField(widget=forms.Textarea)
+
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        country_id = None
+
+        # On POST, use submitted data
+        if 'country' in self.data:
+            try:
+                country_id = int(self.data.get('country'))
+            except (ValueError, TypeError):
+                pass
+        # On GET or initial, use initial data
+        elif self.initial.get('country'):
+            country_id = self.initial.get('country').id if hasattr(self.initial.get('country'), 'id') else self.initial.get('country')
+
+        if country_id:
+            self.fields['state'].queryset = State.objects.filter(country_id=country_id).order_by('name')
+        else:
+            self.fields['state'].queryset = State.objects.none()
 
     @classmethod
     def get_instance(cls, user):
@@ -103,25 +124,32 @@ class EmployerBasicInfoForm(forms.Form):
         }
 
 
-class EmployerAccountForm(forms.ModelForm):
-    class Meta:
-        model = EmployerProfile
-        fields = [
-            'company_website', 'industry', 'company_size', 
-            'about_company', 'company_logo', 'registration_document', 'job_posting_preference'
-        ]
-        
-        widgets = {
-            'about_company': forms.Textarea(attrs={'rows': 4}),
-        }
-
-
 class SeekerBasicInfoForm(forms.Form):
     full_name = forms.CharField(max_length=100)
     phone_number = forms.CharField(max_length=15)
-    country = forms.CharField()
-    state = forms.CharField()
+    country = forms.ModelChoiceField(queryset=Country.objects.all().order_by('name'), empty_label="Select Country")
+    state = forms.ModelChoiceField(queryset=State.objects.none(), empty_label="Select State")
     bio = forms.CharField(widget=forms.Textarea)
+
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        country_id = None
+
+        # On POST, use submitted data
+        if 'country' in self.data:
+            try:
+                country_id = int(self.data.get('country'))
+            except (ValueError, TypeError):
+                pass
+        # On GET or initial, use initial data
+        elif self.initial.get('country'):
+            country_id = self.initial.get('country').id if hasattr(self.initial.get('country'), 'id') else self.initial.get('country')
+
+        if country_id:
+            self.fields['state'].queryset = State.objects.filter(country_id=country_id).order_by('name')
+        else:
+            self.fields['state'].queryset = State.objects.none()
 
     @classmethod
     def get_instance(cls, user):
@@ -133,23 +161,62 @@ class SeekerBasicInfoForm(forms.Form):
             'bio': user.seekerprofile.bio
         }
 
-from .models import SeekerProfile
+
+
+class EmployerAccountForm(forms.ModelForm):
+    company_website = forms.URLField(
+        widget=forms.URLInput(attrs={'placeholder': 'https://yourcompany.com', 'class': 'form-control modern-url'})
+    )
+    company_logo = forms.ImageField(
+        required=False,
+        widget=forms.ClearableFileInput(attrs={'class': 'form-control file-input', 'accept': 'image/*'})
+    )
+    registration_document = forms.FileField(
+        required=False,
+        widget=forms.ClearableFileInput(attrs={'class': 'form-control file-input', 'accept': '.pdf,.doc,.docx'})
+    )
+    company_size = forms.ChoiceField(
+        choices=COMPANY_SIZE_CHOICES,
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+
+    class Meta:
+        model = EmployerProfile
+        fields = [
+            'company_website', 'industry', 'company_size',
+            'about_company', 'company_logo', 'registration_document', 'job_posting_preference'
+        ]
+        widgets = {
+            'about_company': forms.Textarea(attrs={'rows': 4, 'class': 'form-control'}),
+        }
 
 class SeekerAccountForm(forms.ModelForm):
+    skills = forms.CharField(
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Add skills (comma separated)', 'id': 'id_skills'})
+    )
+    resume = forms.FileField(
+        required=False,
+        widget=forms.ClearableFileInput(attrs={'class': 'form-control file-input', 'accept': '.pdf,.doc,.docx'})
+    )
+    profile_picture = forms.ImageField(
+        required=False,
+        widget=forms.ClearableFileInput(attrs={'class': 'form-control file-input', 'accept': 'image/*'})
+    )
+
     class Meta:
         model = SeekerProfile
         fields = [
-            'skills', 'experience', 'education', 'certifications', 
-            'resume', 'profile_picture', 'job_type', 'linkedin','portfolio'
+            'skills', 'experience', 'education', 'certifications',
+            'resume', 'profile_picture', 'job_type', 'linkedin', 'portfolio'
         ]
-
-
         widgets = {
-            'skills': forms.Textarea(attrs={'rows': 4}),
-            'experience': forms.Textarea(attrs={'rows': 4}),
-            'education': forms.Textarea(attrs={'rows': 4}),
-            'certifications': forms.Textarea(attrs={'rows': 4}),
+            'experience': forms.Textarea(attrs={'rows': 4, 'class': 'form-control'}),
+            'education': forms.Textarea(attrs={'rows': 4, 'class': 'form-control'}),
+            'certifications': forms.Textarea(attrs={'rows': 4, 'class': 'form-control'}),
+            'linkedin': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://linkedin.com/in/yourprofile'}),
+            'portfolio': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://yourportfolio.com'}),
         }
+
 
 class LoginForm(forms.Form):
     # email = forms.EmailField(widget=forms.EmailInput(attrs={'placeholder': 'Email'}))

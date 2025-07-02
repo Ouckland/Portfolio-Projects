@@ -10,39 +10,41 @@
 {% endblock head %}
 
 {% block content %}
-<div style="max-width: 500px; margin: auto; padding: 2rem;">
-    <h2 style="text-align: center; margin-bottom: 2rem;">Choose Your Account Type</h2>
-
-    <form method="POST" action="{% url 'users:choose_account_type' %}" style="display: flex; flex-direction: column; gap: 1.5rem;">
+<div class="account-type-container">
+    <h2>Choose Your Account Type</h2>
+    <form method="POST" action="{% url 'users:choose_account_type' %}" autocomplete="off" class="account-type-form">
         {% csrf_token %}
 
         <!-- Username Field -->
-        <div>
-            <label for="{{ form.username.id_for_label }}"><strong>Username</strong></label><br>
+        <div class="form-group">
+            <label for="{{ form.username.id_for_label }}"><strong>Username</strong></label>
             {{ form.username }}
             {% if form.username.errors %}
-                <p style="color: red;">{{ form.username.errors.0 }}</p>
+                <div class="form-error">{{ form.username.errors.0 }}</div>
             {% endif %}
         </div>
 
         <!-- Account Type Field -->
-        <div>
-            <label><strong>Account Type</strong></label><br>
+        <div class="form-group">
+            <label><strong>Account Type</strong></label>
+
+        <div class="radio-group">
             {% for radio in form.account_type %}
-                <div style="margin-bottom: 0.5rem;">
-                    <label style="cursor: pointer;">
+                <label class="radio-label">
+                    <span class="custom-radio">
                         {{ radio.tag }}
-                        {{ radio.choice_label }}
-                    </label>
-                </div>
+                        <span class="custom-radio-indicator"></span>
+                    </span>
+                    {{ radio.choice_label }}
+                </label>
             {% endfor %}
-            {% if form.account_type.errors %}
-                <p style="color: red;">{{ form.account_type.errors.0 }}</p>
+        </div>
+          {% if form.account_type.errors %}
+                <div class="form-error">{{ form.account_type.errors.0 }}</div>
             {% endif %}
         </div>
 
-        <!-- Submit -->
-        <button type="submit" style="margin-top: 1rem;">Continue</button>
+        <button type="submit" class="submit-btn">Continue</button>
     </form>
 </div>
 {% endblock content %}

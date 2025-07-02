@@ -9,23 +9,24 @@ from datetime import timedelta
 
 User = get_user_model()
 
-# class Country(models.Model):
-#     name = models.CharField(max_length=100)
-#     code = models.CharField(max_length=5, unique=True)
+class Country(models.Model):
+    name = models.CharField(max_length=100)
+    code = models.CharField(max_length=5, unique=True)
+    phone_code = models.CharField(max_length=10, blank=True, null=True)
 
-#     def __str__(self):
-#         return f'{self.name}'
+    def __str__(self):
+        return f'{self.name}'
     
-# # models.py
-# class State(models.Model):
-#     country = models.ForeignKey(Country, on_delete=models.CASCADE)
-#     name = models.CharField(max_length=100)
+# models.py
+class State(models.Model):
+    country = models.ForeignKey(Country, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
 
-#     class Meta:
-#         unique_together = ('country', 'name')
+    class Meta:
+        unique_together = ('country', 'name')
 
-#     def __str__(self):
-#         return f"{self.name}, {self.country.name}"
+    def __str__(self):
+        return f"{self.name}, {self.country.name}"
 
 class OTP(models.Model):
     user_email = models.EmailField(unique=True)
@@ -44,19 +45,30 @@ class Profile(models.Model):
     ]
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     account_type = models.CharField(max_length=10, choices=ACCOUNT_CHOICES, default=ACCOUNT_CHOICES[0][0])
-    # country = models.ForeignKey(Country, on_delete=models.CASCADE, null=True)
-    # state = models.ForeignKey(State, on_delete=models.CASCADE, null=True)
-    country = models.CharField(max_length=100, default='Nigeria')
-    state = models.CharField(max_length=100, default='Oyo')
+    country = models.ForeignKey(Country, on_delete=models.CASCADE, null=True)
+    state = models.ForeignKey(State, on_delete=models.CASCADE, null=True)
     
-    # def save(self, *args, **kwargs):
-    #     if not self.country:
-    #         self.country = Country.objects.get(id=1)
-    #         super().save(*args, **kwargs)
+    def save(self, *args, **kwargs):
+        if not self.country:
+            first_country = Country.objects.first()
+            if first_country:
+                self.country = first_country
+        super().save(*args, **kwargs)
 
     class Meta:
         abstract = True
 
+
+
+
+COMPANY_SIZE_CHOICES = [
+    ('1-10', '1-10 employees'),
+    ('11-50', '11-50 employees'),
+    ('51-200', '51-200 employees'),
+    ('201-500', '201-500 employees'),
+    ('501-1000', '501-1000 employees'),
+    ('1001+', '1001+ employees'),
+]
 
 
 class EmployerProfile(Profile):
@@ -65,7 +77,7 @@ class EmployerProfile(Profile):
     industry = models.CharField(max_length=255)
     contact_number = models.CharField(max_length=15, blank=True)
     description = models.TextField(blank=True)
-    company_size = models.CharField(max_length=50)
+    company_size = models.CharField(max_length=50, choices=COMPANY_SIZE_CHOICES)
     about_company = models.TextField()
     company_logo = models.ImageField(upload_to='company_logos/', blank=True, null=True, validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'svg'], message='Only jpg, jpeg, png and svg image formats are allowed!')])
     registration_document = models.FileField(upload_to='registration_docs/', blank=True, null=True, validators=[FileExtensionValidator(allowed_extensions=['docx', 'pdf', 'doc', ], message='Only pdf, docx, and doc document formats are allowed!')])
@@ -92,7 +104,7 @@ class SeekerProfile(Profile):
     portfolio = models.URLField(blank=True)
     phone_number = models.CharField(max_length=15, blank=True)
     bio = models.TextField()
-    skills = models.TextField()
+    skills = models.CharField(max_length=512, blank=True, help_text="Comma-separated skills")  # Or use Taggit for ManyToMany
     experience = models.TextField()
     education = models.TextField()
     certifications = models.TextField(blank=True, null=True)
@@ -137,3 +149,4 @@ class SecurityLog(models.Model):
     def __str__(self):
         return f'{self.user} --> {self.event}'
     
+

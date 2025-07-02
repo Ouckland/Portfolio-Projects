@@ -11,6 +11,9 @@ from django.contrib.auth.decorators import login_required
 from jobs.utils import create_notification
 from .models import OTP, Profile, EmployerProfile, SeekerProfile, KnownDevice, SecurityLog
 from django.core.exceptions import ObjectDoesNotExist
+from django.http import JsonResponse
+from .models import State, Country
+
 
 
 from .forms import EmailSignupForm, User, OTPform, ChooseAccountTypeForm, EmployerBasicInfoForm, SeekerBasicInfoForm
@@ -65,13 +68,12 @@ def email_signup_view(request):
                 messages.error(request, f"Failed to send OTP: {str(e)}")
                 return redirect('users:email_sign_up')
 
-            messages.info(request, f'OTP sent to {email}')
+            messages.success(request, f'OTP sent to {email}')
             return redirect('users:validate_otp', user_email=email)
     else:
         form = EmailSignupForm()
 
     return render(request, 'user/signup.html', {'form': form})
-
 
 
 def validate_otp(request, user_email):
@@ -83,28 +85,26 @@ def validate_otp(request, user_email):
     otp_form = OTPform(user_email=user_email)
 
     if request.method == 'POST':
+        # Combine the 6 input boxes into a single 'otp' field in the template JS
         otp_form = OTPform(request.POST, user_email=user_email)
         if otp_form.is_valid():
             entered_otp = otp_form.cleaned_data.get('otp')
-
             try:
                 otp_object = OTP.objects.get(user_email=user_email)
-
                 if entered_otp == otp_object.otp:
                     otp_object.delete()
-
                     messages.success(request, 'OTP verified successfully. Please complete your profile to proceed.')
                     return redirect('users:choose_account_type')
                 else:
                     messages.error(request, 'Invalid OTP. Please try again.')
-
             except OTP.DoesNotExist:
                 messages.error(request, 'OTP has expired or does not exist.')
-
         else:
-            messages.error(request, 'Invalid form submission. Please enter a valid OTP.')
+            # This will catch cases like not entering all 6 digits
+            messages.error(request, 'Please enter a valid 6-digit OTP.')
 
     return render(request, 'user/validate-otp.html', {'form': otp_form, 'user_email': user_email})
+
 
 def resend_otp(request, user_email):
     user_email = request.session.get('signup_email')
@@ -204,11 +204,21 @@ def basic_info_view(request):
     if request.method == 'POST':
         form = form.__class__(request.POST, request.FILES)  # Handle form submission
         if form.is_valid():
-            request.session['basic_info'] = form.cleaned_data
+            # Convert model instances to IDs for session storage
+            basic_info = form.cleaned_data.copy()
+            for key, value in basic_info.items():
+                if hasattr(value, 'pk'):
+                    basic_info[key] = value.pk
+            request.session['basic_info'] = basic_info
             return redirect('users:account_info')  # Go to the account info page to fill out more data
 
-    return render(request, 'user/basic-info.html', {'form': form})
-
+    countries = Country.objects.all().order_by('name')
+    states = State.objects.all().order_by('name')
+    return render(request, 'user/basic-info.html', {
+        'form': form,
+        'countries': countries,
+        'states': states,
+    })
 
 def account_info_view(request):
     user_id = request.session.get('pending_user_id')
@@ -235,9 +245,14 @@ def account_info_view(request):
         if form.is_valid():
             profile = form.save(commit=False)
 
-            # DRY: dynamically populate fields from basic_info_data
+            # Assign related model instances for country and state
             for field in basic_fields:
-                setattr(profile, field, basic_info_data.get(field, getattr(profile, field)))
+                value = basic_info_data.get(field, getattr(profile, field))
+                if field == "country" and value:
+                    value = Country.objects.get(pk=value)
+                if field == "state" and value:
+                    value = State.objects.get(pk=value)
+                setattr(profile, field, value)
 
             profile.save()
             user.is_active = True
@@ -252,7 +267,6 @@ def account_info_view(request):
         form = FormClass(instance=profile)
 
     return render(request, 'user/account-info.html', context={'form': form, 'account_type': account_type})
-
 
 
 
@@ -464,3 +478,9 @@ def logout_view(request):
         return redirect('jobs:home')
     
     return render(request, 'partials/header.html')
+
+def load_states(request):
+    country_id = request.GET.get('country')
+    states = State.objects.filter(country_id=country_id).order_by('name')
+    # Only return id and name, not the whole object
+    return JsonResponse(list(states.values('id', 'name')), safe=False)

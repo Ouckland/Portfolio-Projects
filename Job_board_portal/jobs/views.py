@@ -25,15 +25,6 @@ User = get_user_model()
 def home(request):
     return render(request, 'app/home.html')
 
-
-from django.core.paginator import Paginator
-from django.db.models import Q
-from django.utils import timezone
-from django.contrib import messages
-from django.shortcuts import render, redirect
-from .models import JobPosting, JobApplication
-from .utils import get_user_profile  # Assuming you have this helper
-
 @login_required
 def dashboard(request):
     user = request.user

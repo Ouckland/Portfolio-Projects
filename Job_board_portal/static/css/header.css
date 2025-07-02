@@ -1,0 +1,119 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+.main-navbar {
+  width: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 500;
+  background: rgba(18, 20, 40, 0.82);
+  backdrop-filter: blur(18px) saturate(180%);
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  border-bottom: 1.5px solid rgba(255,0,60,0.10);
+  box-shadow: 0 4px 32px #000b, 0 0 0 1.5px #3b8cff22 inset;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 2.5rem;
+}
+
+.navbar-logo {
+  color: #fff;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-decoration: none;
+  text-shadow: 0 2px 12px #000a;
+  transition: color 0.2s;
+}
+
+.navbar-logo:hover {
+  color: #3b8cff;
+}
+
+.navbar-links {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.navbar-links a {
+  color: #fff;
+  text-decoration: none;
+  font-size: 1.08rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  padding: 0.4em 1em;
+  border-radius: 8px;
+  transition: color 0.2s, background 0.2s, box-shadow 0.2s;
+  background: rgba(255,255,255,0.01);
+}
+
+.navbar-links a:hover {
+  color: #3b8cff;
+  background: rgba(255,255,255,0.08);
+  box-shadow: 0 2px 18px #3b8cff44;
+}
+
+.notif-badge {
+  background: #ff6b6b;
+  color: #fff;
+  border-radius: 50%;
+  padding: 0.18em 0.6em;
+  font-size: 0.93em;
+  font-weight: bold;
+  margin-left: 0.5em;
+  vertical-align: middle;
+  box-shadow: 0 1px 6px #0006;
+}
+
+.navbar-logout-form {
+  display: inline;
+  margin: 0;
+}
+
+.logout-btn {
+  background: linear-gradient(90deg, #3b8cff 60%, #23243a 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.4em 1.2em;
+  font-size: 1.08rem;
+  font-weight: 600;
+  margin-left: 1.2rem;
+  cursor: pointer;
+  box-shadow: 0 2px 12px #3b8cff33;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  letter-spacing: 0.5px;
+}
+
+.logout-btn:hover {
+  background: #fff;
+  color: #3b8cff;
+  box-shadow: 0 2px 18px #fff8;
+}
+
+@media (max-width: 900px) {
+  .main-navbar {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0.7rem 1rem;
+  }
+  .navbar-links {
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 600px) {
+  .main-navbar {
+    padding: 0.7rem 0.3rem;
+  }
+  .navbar-logo {
+    font-size: 1.1rem;
+  }
+  .navbar-links a, .logout-btn {
+    font-size: 0.98rem;
+    padding: 0.3em 0.7em;
+  }
+}

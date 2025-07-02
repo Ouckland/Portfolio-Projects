@@ -16,6 +16,7 @@ urlpatterns = [
     path('resend-reset-otp/<str:user_email>/', views.resend_reset_otp, name='resend_reset_otp'),
     path('reset-password/', views.reset_password, name='reset_password'),
     path('logout/', views.logout_view, name='logout'),
+
+    path('ajax/load-states/', views.load_states, name='ajax_load_states'),
+
 ]
-
-
