@@ -104,7 +104,7 @@ class SeekerProfile(Profile):
     portfolio = models.URLField(blank=True)
     phone_number = models.CharField(max_length=15, blank=True)
     bio = models.TextField()
-    skills = models.CharField(max_length=512, blank=True, help_text="Comma-separated skills")  # Or use Taggit for ManyToMany
+    skills = models.CharField(blank=True, help_text='Add skills related to your profession. You can add multiple skills.')
     experience = models.TextField()
     education = models.TextField()
     certifications = models.TextField(blank=True, null=True)

@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.core.mail import send_mail
 from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.contrib.auth.decorators import login_required
-from jobs.utils import create_notification
+from jobs.utils import get_user_profile, calculate_profile_completion, create_notification
 from .models import OTP, Profile, EmployerProfile, SeekerProfile, KnownDevice, SecurityLog
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import JsonResponse
@@ -307,11 +307,6 @@ def login_view(request):
                     # Save device
                     KnownDevice.objects.create(user=user, user_agent=current_agent)
 
-                create_notification(
-                    recipient=user,
-                    message="You've logged in successfully.",
-                    url=reverse('jobs:dashboard'),
-                )
 
                 messages.success(request, 'Login successful.')
                 return redirect('jobs:dashboard')
@@ -484,3 +479,222 @@ def load_states(request):
     states = State.objects.filter(country_id=country_id).order_by('name')
     # Only return id and name, not the whole object
     return JsonResponse(list(states.values('id', 'name')), safe=False)
+
+
+
+@login_required
+def profile(request):
+    user = request.user
+    profile, profile_type = get_user_profile(user)
+
+    if not profile:
+        messages.error(request, "Profile not found.")
+        return redirect('jobs:dashboard')
+    completion_percentage = calculate_profile_completion(profile, profile_type)
+
+    context = {
+        'profile': profile,
+        'profile_type': profile_type,
+        'completion_percentage': completion_percentage
+    }
+
+    return render(request, 'user/view-profile.html', context)
+
+
+@login_required
+def update_profile(request):
+    user = request.user
+    if not user or user is None:
+        messages.error(request, 'Session has expired. Please try logging in again.')
+        return redirect('users:login')
+    
+    return render(request, 'user/update-profile.html')
+
+
+
+@login_required
+def update_basic_info(request):
+    user = request.user
+    profile, profile_type = get_user_profile(user)
+    
+    # Get all countries and states
+    countries = Country.objects.all()
+    states = State.objects.filter(country=profile.country) if profile.country else State.objects.none()
+    
+    # Get current phone codes
+    phone_number_code = getattr(profile, 'phone_number_code', '')
+    contact_number_code = getattr(profile, 'contact_number_code', '')
+
+    # Pick the correct form class and initial data
+    if profile_type == 'seeker':
+        FormClass = SeekerBasicInfoForm
+        initial_data = {
+            'full_name': profile.full_name,
+            'phone_number': profile.phone_number,
+            'phone_number_code': phone_number_code,
+            'country': profile.country,
+            'state': profile.state,
+            'bio': profile.bio,
+        }
+    else:
+        FormClass = EmployerBasicInfoForm
+        initial_data = {
+            'company_name': profile.company_name,
+            'contact_number': profile.contact_number,
+            'contact_number_code': contact_number_code,
+            'country': profile.country,
+            'state': profile.state,
+            'description': profile.description,
+        }
+
+    if request.method == 'POST':
+        form = FormClass(request.POST, request.FILES)
+        if form.is_valid():
+            if profile_type == 'seeker':
+                profile.full_name = form.cleaned_data['full_name']
+                profile.phone_number = form.cleaned_data['phone_number']
+                profile.phone_number_code = form.cleaned_data.get('phone_number_code', '')
+                profile.country = form.cleaned_data['country']
+                profile.state = form.cleaned_data['state']
+                profile.bio = form.cleaned_data['bio']
+            else:
+                profile.company_name = form.cleaned_data['company_name']
+                profile.contact_number = form.cleaned_data['contact_number']
+                profile.contact_number_code = form.cleaned_data.get('contact_number_code', '')
+                profile.country = form.cleaned_data['country']
+                profile.state = form.cleaned_data['state']
+                profile.description = form.cleaned_data['description']
+
+            profile.save()
+
+            messages.success(request, 'Basic info updated successfully.')
+            create_notification(
+                recipient=user,
+                message='You have successfully updated your basic information.',
+                url=reverse('users:view_profile'),
+            )
+            return redirect('users:view_profile')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = FormClass(initial=initial_data)
+
+    context = {
+        'form': form,
+        'profile_type': profile_type,
+        'countries': countries,
+        'states': states,
+        'selected_phone_code': phone_number_code if profile_type == 'seeker' else contact_number_code,
+    }
+    return render(request, 'user/update-basic-info.html', context)
+
+
+
+@login_required
+def update_account_info(request):
+    user = request.user
+    profile, profile_type = get_user_profile(user)
+
+    # Dynamically choose form and profile model
+    if profile_type == 'employer':
+        try:
+            profile_instance = user.employerprofile
+        except EmployerProfile.DoesNotExist:
+            messages.error(request, 'Employer profile does not exist.')
+            return redirect('jobs:dashboard')
+        FormClass = EmployerAccountForm
+    else:
+        try:
+            profile_instance = user.seekerprofile
+        except SeekerProfile.DoesNotExist:
+            messages.error(request, 'Seeker profile does not exist.')
+            return redirect('jobs:dashboard')
+        FormClass = SeekerAccountForm
+
+    # Handle form submission
+    if request.method == 'POST':
+        form = FormClass(request.POST, request.FILES, instance=profile_instance)
+        if form.is_valid():
+            form.save()
+            create_notification(
+                recipient=user,
+                message='Your account information has been updated successfully.',
+                url=reverse('users:view_profile')
+            )
+            messages.success(request, 'Profile updated successfully.')
+            return redirect('users:view_profile')
+        else:
+            messages.error(request, 'Please fix the errors below.')
+    else:
+        form = FormClass(instance=profile_instance)
+
+    context = {
+        'form': form,
+        'profile_type': profile_type,
+    }
+    return render(request, 'user/update-account-info.html', context)
+
+
+@login_required
+def update_profile_picture(request):
+    user = request.user
+    if request.method == 'POST' and request.FILES.get('profile_picture'):
+        if hasattr(user, 'seekerprofile'):
+            profile = user.seekerprofile
+            profile.profile_picture = request.FILES['profile_picture']
+            profile.save()
+        elif hasattr(user, 'employerprofile'):
+            profile = user.employerprofile
+            profile.company_logo = request.FILES['profile_picture']
+            profile.save()
+        messages.success(request, "Profile picture updated.")
+    return redirect('users:view_profile')
+
+
+def public_profile(request, username):
+    # Get user or return 404
+    user = get_object_or_404(User, username=username)
+
+    # Try to get related profile
+    profile_type = None
+    profile = None
+
+    if hasattr(user, 'seekerprofile'):
+        profile = user.seekerprofile
+        profile_type = 'seeker'
+    elif hasattr(user, 'employerprofile'):
+        profile = user.employerprofile
+        profile_type = 'employer'
+
+    if not profile:
+        return render(request, '404.html', status=404)
+
+    return render(request, 'user/public-profile.html', {
+        'profile': profile,
+        'profile_type': profile_type
+    })
+
+
+def profile_setup(request):
+    user = request.user
+    if not user:
+        messages.error(request, "Session expired. Please log in again")
+        return redirect('users:login')
+    
+    profile = get_user_profile(user)
+    if not profile:
+        pass
+        
+    return render(request, 'user/profile-setup.html') 
+
+def account_settings(request):
+    user = request.user
+    if not user or not user.is_active:
+        messages.error(request, "Session expired. Please log in again")
+        return redirect('users:login')
+    
+    profile, profile_type = get_user_profile(user)
+    context = {
+        'profile_type': profile_type,
+    }
+    return render(request, 'user/view-account-settings.html', context)

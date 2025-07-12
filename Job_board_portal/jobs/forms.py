@@ -1,19 +1,25 @@
+from taggit.forms import TagWidget
 from django import forms
 from .models import JobApplication, JobPosting
-
-
 
 class PostJobForm(forms.ModelForm):
     class Meta:
         model = JobPosting
         fields = [
-            'title','job_type','location','salary','experience_required','qualifications','deadline','job_category','job_status','skills_required',
+            'title', 'job_type', 'location', 'salary', 
+            'experience_required', 'qualifications', 'deadline',
+            'job_category', 'job_status', 'skills_required'
         ]
+        widgets = {
+            'skills_required': forms.TextInput(attrs={
+                'class': 'tagify-input',
+                'placeholder': 'Type skills and press Enter'
+            }),
+            'deadline': forms.DateInput(attrs={'type': 'date'}),
+        }
 
-    def clean(self):
-        cleaned_data = super().clean()
-        return cleaned_data
-    
+
+
 class ApplyForJobForm(forms.ModelForm):
     class Meta:
         model = JobApplication

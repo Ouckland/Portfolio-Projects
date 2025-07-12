@@ -1,4 +1,8 @@
 {% extends "partials/base.html" %}
+{% load static %}
+{% block head %}
+    <link rel="stylesheet" href="{% static 'css/add-job.css' %}">
+{% endblock head %}
 {% block content %}
     {% include "partials/header.html" %}
     

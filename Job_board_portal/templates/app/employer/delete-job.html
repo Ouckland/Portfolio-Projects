@@ -1,18 +1,26 @@
 {% extends "partials/base.html" %}
+{% load static %}
+{% block head %}
+    <link rel="stylesheet" href="{% static 'css/delete-application.css' %}">
+{% endblock head %}
 {% block content %}
-    {% include "partials/header.html" %}
+  {% include "partials/header.html" %}
 
-    <section style="padding: 2rem;">
-        <h2>Confirm Deletion</h2>
-        <div>
-            <p>Are you sure you want to delete the job <strong>{{ job.title }}</strong>?</p>
+  <section class="delete-application-section">
+    <h1>Delete Job </h1>
 
-            <form action="{% url 'jobs:delete_job' job.id %}" method="POST" style="margin-bottom: 1rem;">
-                {% csrf_token %}
-                <button type="submit">✅ Yes, Delete</button>
-            </form>
+    <p class="delete-message">
+      Are you sure you want to delete the job 
+      <strong>{{ job.title }}</strong>?
+    </p>
 
-            <a href="{% url 'jobs:view_job_detail' job.id %}">❌ No, Take me back</a>
-        </div>
-    </section>
+    <form action="{% url 'jobs:delete_job' job.id %}" method="POST">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Yes, Delete</button>
+    </form>
+    <div class="cancel-link">
+      <a href="{% url 'jobs:view_job_detail' job.id %}">No, take me back</a>
+    </div>
+
+  </section>
 {% endblock content %}

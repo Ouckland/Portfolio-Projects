@@ -86,12 +86,14 @@ class ChooseAccountTypeForm(forms.Form):
         self.user_email = user_email  # Store email for later use
 
 
+
 class EmployerBasicInfoForm(forms.Form):
     company_name = forms.CharField(max_length=100)
     contact_number = forms.CharField(max_length=15)
     country = forms.ModelChoiceField(queryset=Country.objects.all().order_by('name'), empty_label="Select Country")
     state = forms.ModelChoiceField(queryset=State.objects.none(), empty_label="Select State")
     description = forms.CharField(widget=forms.Textarea)
+    contact_number_code = forms.CharField(required=False, widget=forms.HiddenInput())
 
 
     def __init__(self, *args, **kwargs):
@@ -130,6 +132,7 @@ class SeekerBasicInfoForm(forms.Form):
     country = forms.ModelChoiceField(queryset=Country.objects.all().order_by('name'), empty_label="Select Country")
     state = forms.ModelChoiceField(queryset=State.objects.none(), empty_label="Select State")
     bio = forms.CharField(widget=forms.Textarea)
+    phone_number_code = forms.CharField(required=False, widget=forms.HiddenInput())
 
 
     def __init__(self, *args, **kwargs):

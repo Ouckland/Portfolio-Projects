@@ -17,6 +17,15 @@ urlpatterns = [
     path('reset-password/', views.reset_password, name='reset_password'),
     path('logout/', views.logout_view, name='logout'),
 
+    path('view-profile', views.profile, name='view_profile'),
+    path('profile/update/', views.update_profile, name='update_profile'),   
+    path('profile/update/basic-info/', views.update_basic_info, name='update_basic_info'),   
+    path('profile/update/account-info/', views.update_account_info, name='update_account_info'),
+    path('update-picture/', views.update_profile_picture, name='update_profile_picture'),   
+    path('profile/setup/', views.profile_setup, name='profile_setup'),
+    path('profile/<str:username>/', views.public_profile, name='public_profile'),
+
+
     path('ajax/load-states/', views.load_states, name='ajax_load_states'),
 
 ]

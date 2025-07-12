@@ -1,63 +1,108 @@
 {% extends "partials/base.html" %}
+{% load static %}
+
+{% block head %}
+<link rel="stylesheet" href="{% static 'css/view-application-detail.css' %}">
+{% endblock head %}
+
 {% block content %}
-    {% include "partials/header.html" %}
+{% include "partials/header.html" %}
 
-    <section style="max-width: 700px; margin: 2rem auto; padding: 1.5rem; border: 1px solid #ddd; border-radius: 10px;">
-        <h2 style="margin-bottom: 1rem; font-size: 1.5rem;">
-            Application for: <span style="color: #333;">{{ application.job.title }}</span>
-        </h2>
+<section class="application-detail-section">
+  <h2>Application for: <span>{{ application.job.title }}</span></h2>
 
-        <div style="margin-bottom: 1rem;">
-            <h3>Applicant Info</h3>
-            <p><strong>Name:</strong> {{ application.applicant.full_name }}</p>
-            <p><strong>Email:</strong> {{ application.applicant.user.email }}</p>
-            <p><strong>Bio:</strong> {{ application.applicant.bio }}</p>
-        </div>
+  <div class="card">
+    <div class="carousel-previous">
+      <button class="carousel-btn prev">
+        <img src="{% static 'images/arrow-back.png' %}" alt="Previous">
+      </button>
+    </div>
 
-        <div style="margin-bottom: 1rem;">
-            <h3>Cover Letter</h3>
-            <p style="white-space: pre-line;">{{ application.cover_letter }}</p>
-        </div>
+    <div class="application-carousel">
+      <!-- Slide 1: Applicant Info -->
+      <div class="application-slide active">
+        <p><strong>Name:</strong> {{ application.applicant.full_name }}</p>
+        <p><strong>Email:</strong> {{ application.applicant.user.email }}</p>
+        <p><strong>Bio:</strong> {{ application.applicant.bio }}</p>
+        <p><strong>Status:</strong> 
+          {% if application.status == 'accepted' %}
+            <span class="status accepted">{{ application.get_status_display }}</span>
+          {% elif application.status == 'rejected' %}
+            <span class="status rejected">{{ application.get_status_display }}</span>
+          {% else %}
+            <span class="status pending">{{ application.get_status_display }}</span>
+          {% endif %}
+        </p>
+        <p><strong>Applied on:</strong> {{ application.application_date|date:"F j, Y" }}</p>
+      </div>
 
-        <div style="margin-bottom: 1rem;">
-            <h3>Resume</h3>
-            <a href="{{ application.resume.url }}" download style="color: #007bff; text-decoration: underline;">
-                Download Resume
-            </a>
-        </div>
+      <!-- Slide 2: Cover Letter -->
+      <div class="application-slide">
+        <p><strong>Cover Letter:</strong></p>
+        <p class="cover-text">{{ application.cover_letter }}</p>
+      </div>
+
+      <!-- Slide 3: Resume & Attachments -->
+      <div class="application-slide">
+        <p><strong>Resume:</strong></p>
+        <a class="download-btn" href="{{ application.resume.url }}" download>Download Resume</a>
 
         {% if application.attachments %}
-            <div style="margin-bottom: 1rem;">
-                <h3>Attachment</h3>
-                <a href="{{ application.attachments.url }}" download style="color: #007bff; text-decoration: underline;">
-                    Download Attachment
-                </a>
-            </div>
+          <p><strong>Attachment:</strong></p>
+          <a class="download-btn" href="{{ application.attachments.url }}" download>Download Attachment</a>
         {% endif %}
+      </div>
+    </div>
 
-        {% if application.status == 'accepted' %}
-            <strong>Status:<span style="color: green;">  {{ application.get_status_display }}</span></strong>
-        {% elif application.status == 'rejected' %}
-            <strong>Status:<span style="color: red;">  {{ application.get_status_display }}</span></strong>
-        {% else %}
-            <strong>Status:<span>  {{ application.get_status_display }}</span></strong>
-        {% endif %}
+    <div class="carousel-next">
+      <button class="carousel-btn next">
+        <img src="{% static 'images/arrow-forward.png' %}" alt="Next">
+      </button>
+    </div>
+  </div>
 
-        <p><strong>Applied on:</strong> {{ application.application_date|date:"F j, Y" }}</p>
+  <div class="slide-indicators">
+    <span class="dot active"></span>
+    <span class="dot"></span>
+    <span class="dot"></span>
+  </div>
 
-        <div style="margin-top: 2rem;">
-            {% if is_seeker and application.status == 'pending' %}
-                <a href="{% url 'jobs:update_application' application.id %}" style="margin-right: 1rem; padding: 0.5rem 1rem; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px;">
-                    Update Application
-                </a>
-                <a href="{% url 'jobs:delete_application' application.id %}" style="padding: 0.5rem 1rem; background-color: #d32f2f; color: white; text-decoration: none; border-radius: 5px;">
-                    Delete Application
-                </a>
-            {% elif is_employer %}
-                <a href="{% url 'jobs:review_application' application.id %}" style="padding: 0.5rem 1rem; background-color: #1976d2; color: white; text-decoration: none; border-radius: 5px;">
-                    Review Application
-                </a>
-            {% endif %}
-        </div>
-    </section>
+  <div class="action-buttons">
+    {% if is_seeker and application.status == 'pending' %}
+      <a href="{% url 'jobs:update_application' application.id %}" class="btn btn-primary">Update Application</a>
+      <a href="{% url 'jobs:delete_application' application.id %}" class="btn btn-danger">Delete Application</a>
+    {% elif is_employer %}
+      <a href="{% url 'jobs:review_application' application.id %}" class="btn btn-success">Review Application</a>
+    {% endif %}
+  </div>
+</section>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const slides = document.querySelectorAll(".application-slide");
+  const prevBtn = document.querySelector(".carousel-btn.prev");
+  const nextBtn = document.querySelector(".carousel-btn.next");
+  const dots = document.querySelectorAll(".dot");
+  let current = 0;
+
+  function updateSlides(index) {
+    slides.forEach((slide, i) => {
+      slide.classList.toggle("active", i === index);
+      dots[i].classList.toggle("active", i === index);
+    });
+  }
+
+  nextBtn.addEventListener("click", () => {
+    current = (current + 1) % slides.length;
+    updateSlides(current);
+  });
+
+  prevBtn.addEventListener("click", () => {
+    current = (current - 1 + slides.length) % slides.length;
+    updateSlides(current);
+  });
+
+  updateSlides(current);
+});
+</script>
 {% endblock content %}

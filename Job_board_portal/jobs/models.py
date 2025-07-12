@@ -4,7 +4,10 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxLengthValidator, MinLengthValidator
 from users.models import EmployerProfile, SeekerProfile, User
+
 # Create your models here.
+
+
 
 class JobType(models.TextChoices):
     ft = 'FT', 'Full-Time'
@@ -19,6 +22,9 @@ class Status(models.TextChoices):
     accepted = 'accepted', 'ACCEPTED'
     rejected = 'rejected', 'REJECTED'
 
+
+
+
 class JobPosting(models.Model):
     employer = models.ForeignKey(EmployerProfile, on_delete=models.CASCADE, related_name='posted_jobs')
     title = models.CharField(max_length=255, validators=[MinLengthValidator(3)])
@@ -31,10 +37,11 @@ class JobPosting(models.Model):
     deadline = models.DateField()
     job_category = models.CharField()
     job_status = models.CharField(max_length=50, choices=JobStatus.choices, default=JobStatus.open)
-    skills_required = models.CharField()
-    # job_id = models.ForeignKey(JobId, on_delete=models.CASCADE)
+    skills_required = models.CharField(verbose_name="Skills Required", help_text="Enter relevant skills")
 
-    unique_together = ('employer', 'title')
+
+    class Meta:
+        unique_together = ('employer', 'title')
         
     def is_active(self):
         return self.deadline >= timezone.now().date()

@@ -10,13 +10,15 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.http import Http404, HttpResponseNotFound, HttpResponseForbidden
 from .models import JobApplication, JobPosting, Notification
-from .forms import PostJobForm, ApplyForJobForm, PublicContactForm
-from .decorators import applicant_allowed, employer_allowed
+from .forms import PostJobForm, ApplyForJobForm
 from django.utils import timezone
 from django.views.decorators.http import require_POST
-from users.models import EmployerProfile, SeekerProfile, Profile
+from users.models import EmployerProfile, SeekerProfile
 from .utils import get_user_profile, create_notification, calculate_profile_completion
-from users.forms import SeekerBasicInfoForm, EmployerBasicInfoForm, SeekerAccountForm, EmployerAccountForm 
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+
+
 
 User = get_user_model()
 
@@ -42,27 +44,37 @@ def dashboard(request):
             deadline__gte=timezone.now().date()
         )
 
+        context['total_applications'] = JobApplication.objects.filter(
+            job__in=context['active_jobs']
+        ).count()
+
     elif profile_type == 'seeker':
         jobs = JobPosting.objects.filter(
             deadline__gte=timezone.now().date()
         ).exclude(applications__applicant=profile)
 
-        # Match based on skills
+        # --- Recommended Jobs Based on Seeker's Skills ---
+        recommended_jobs = jobs
         if profile.skills:
-            skills = [s.strip().lower() for s in profile.skills.split(',')]
+            seeker_skills = [s.strip().lower() for s in profile.skills.split(",") if s.strip()]
             skill_query = Q()
-            for skill in skills:
+            for skill in seeker_skills:
                 skill_query |= (
                     Q(title__icontains=skill) |
                     Q(skills_required__icontains=skill) |
                     Q(job_category__icontains=skill)
                 )
-            jobs = jobs.filter(skill_query)
+            recommended_jobs = recommended_jobs.filter(skill_query).distinct()
+        else:
+            recommended_jobs = recommended_jobs.none()
 
-        # Optional filtering
+        context['recommended_jobs'] = recommended_jobs[:5]
+
+        # --- Search & Filtering ---
+        search_jobs = jobs
         search_query = request.GET.get('q')
         if search_query:
-            jobs = jobs.filter(
+            search_jobs = search_jobs.filter(
                 Q(title__icontains=search_query) |
                 Q(location__icontains=search_query) |
                 Q(skills_required__icontains=search_query)
@@ -70,19 +82,19 @@ def dashboard(request):
 
         job_type = request.GET.get('job_type')
         if job_type:
-            jobs = jobs.filter(job_type=job_type)
+            search_jobs = search_jobs.filter(job_type=job_type)
 
         location = request.GET.get('location')
         if location:
-            jobs = jobs.filter(location__icontains=location)
+            search_jobs = search_jobs.filter(location__icontains=location)
 
         sort = request.GET.get('sort')
         if sort == "deadline":
-            jobs = jobs.order_by("deadline")
+            search_jobs = search_jobs.order_by("deadline")
         else:
-            jobs = jobs.order_by("-posted_date")
+            search_jobs = search_jobs.order_by("-posted_date")
 
-        paginator = Paginator(jobs, 5)
+        paginator = Paginator(search_jobs, 5)
         page_number = request.GET.get("page")
         context['latest_jobs'] = paginator.get_page(page_number)
 
@@ -168,7 +180,7 @@ def update_job_details(request, job_id):
         if form.is_valid():
             try:
                 form.save()
-
+                
                 # Notify the employer
                 create_notification(
                     recipient=request.user,
@@ -501,201 +513,34 @@ def update_application(request, application_id):
 def forbidden(request):
     return render(request, 'error-pages/forbidden.html', )
 
+
 @login_required
 def notifications_view(request):
     notifications = Notification.objects.filter(recipient=request.user).order_by('-created_at')
-    return render(request, 'app/notifications.html', {'notifications': notifications})
+    unread_count = notifications.filter(is_read=False).count()
+    return render(request, 'app/notifications.html', {
+        'notifications': notifications,
+        'unread_count': unread_count
+    })
 
-@require_POST
+
 @login_required
 def mark_notification_as_read(request, notification_id):
-    notification = get_object_or_404(Notification, id=notification_id, recipient=request.user)
-    notification.is_read = True
-    notification.save()
-    return redirect(request.META.get('HTTP_REFERER', 'jobs:dashboard'))
+    if request.method == 'POST':
+        notification = get_object_or_404(Notification, id=notification_id, recipient=request.user)
+        if not notification.is_read:
+            notification.is_read = True
+            notification.save()
+        unread_count = Notification.objects.filter(recipient=request.user, is_read=False).count()
+        return JsonResponse({'success': True, 'unread_count': unread_count})
+    return JsonResponse({'success': False}, status=400)
+
 
 @login_required
 def mark_all_as_read(request):
-    user = request.user
-    all_notifications = Notification.objects.filter(recipient=user, is_read=False).update(is_read=True)
-    return redirect(request.META.get('HTTP_REFERER', 'jobs:dashboard'))
-
-@login_required
-def profile(request):
-    user = request.user
-    profile, profile_type = get_user_profile(user)
-
-    if not profile:
-        messages.error(request, "Profile not found.")
-        return redirect('jobs:dashboard')
-    completion_percentage = calculate_profile_completion(profile, profile_type)
-
-    context = {
-        'profile': profile,
-        'profile_type': profile_type,
-        'completion_percentage': completion_percentage
-    }
-
-    return render(request, 'app/view-profile.html', context)
-
-
-@login_required
-def update_profile(request):
-    user = request.user
-    if not user or user is None:
-        messages.error(request, 'Session has expired. Please try logging in again.')
-        return redirect('users:login')
-    
-    return render(request, 'app/update-profile.html')
-
-
-
-@login_required
-def update_basic_info(request):
-    user = request.user
-    profile, profile_type = get_user_profile(user)
-
-    # Pick the correct form class
-    if profile_type == 'seeker':
-        FormClass = SeekerBasicInfoForm
-        initial_data = {
-            'full_name': profile.full_name,
-            'phone_number': profile.phone_number,
-            'country': profile.country,
-            'state': profile.state,
-            'bio': profile.bio,
-        }
-    else:
-        FormClass = EmployerBasicInfoForm
-        initial_data = {
-            'company_name': profile.company_name,
-            'contact_number': profile.contact_number,
-            'country': profile.country,
-            'state': profile.state,
-            'description': profile.description,
-        }
-
     if request.method == 'POST':
-        form = FormClass(request.POST, request.FILES)
-        if form.is_valid():
-            if profile_type == 'seeker':
-                profile.full_name = form.cleaned_data['full_name']
-                profile.phone_number = form.cleaned_data['phone_number']
-                profile.country = form.cleaned_data['country']
-                profile.state = form.cleaned_data['state']
-                profile.bio = form.cleaned_data['bio']
-            else:
-                profile.company_name = form.cleaned_data['company_name']
-                profile.contact_number = form.cleaned_data['contact_number']
-                profile.country = form.cleaned_data['country']
-                profile.state = form.cleaned_data['state']
-                profile.description = form.cleaned_data['description']
-
-            profile.save()
-
-            messages.success(request, 'Basic info updated successfully.')
-            create_notification(
-                recipient=user,
-                message='You have successfully updated your basic information.',
-                url=reverse('jobs:view_profile'),
-            )
-            return redirect('jobs:view_profile')
-        else:
-            messages.error(request, 'Please correct the errors below.')
-    else:
-        form = FormClass(initial=initial_data)
-
-    context = {
-        'form': form,
-        'profile_type': profile_type,
-    }
-    return render(request, 'app/update-basic-info.html', context)
-
-@login_required
-def update_account_info(request):
-    user = request.user
-    profile, profile_type = get_user_profile(user)
-
-    # Dynamically choose form and profile model
-    if profile_type == 'employer':
-        try:
-            profile_instance = user.employerprofile
-        except EmployerProfile.DoesNotExist:
-            messages.error(request, 'Employer profile does not exist.')
-            return redirect('jobs:dashboard')
-        FormClass = EmployerAccountForm
-    else:
-        try:
-            profile_instance = user.seekerprofile
-        except SeekerProfile.DoesNotExist:
-            messages.error(request, 'Seeker profile does not exist.')
-            return redirect('jobs:dashboard')
-        FormClass = SeekerAccountForm
-
-    # Handle form submission
-    if request.method == 'POST':
-        form = FormClass(request.POST, request.FILES, instance=profile_instance)
-        if form.is_valid():
-            form.save()
-            create_notification(
-                recipient=user,
-                message='Your account information has been updated successfully.',
-                url=reverse('jobs:view_profile')
-            )
-            messages.success(request, 'Profile updated successfully.')
-            return redirect('jobs:view_profile')
-        else:
-            messages.error(request, 'Please fix the errors below.')
-    else:
-        form = FormClass(instance=profile_instance)
-
-    context = {
-        'form': form,
-        'profile_type': profile_type,
-    }
-    return render(request, 'app/update-account-info.html', context)
-
-
-@login_required
-def update_profile_picture(request):
-    user = request.user
-    if request.method == 'POST' and request.FILES.get('profile_picture'):
-        if hasattr(user, 'seekerprofile'):
-            profile = user.seekerprofile
-            profile.profile_picture = request.FILES['profile_picture']
-            profile.save()
-        elif hasattr(user, 'employerprofile'):
-            profile = user.employerprofile
-            profile.company_logo = request.FILES['profile_picture']
-            profile.save()
-        messages.success(request, "Profile picture updated.")
-    return redirect('jobs:view_profile')
-
-from django.shortcuts import get_object_or_404, render
-from django.contrib.auth.models import User
-from jobs.models import SeekerProfile, EmployerProfile  # or wherever your models are
-
-def public_profile(request, username):
-    # Get user or return 404
-    user = get_object_or_404(User, username=username)
-
-    # Try to get related profile
-    profile_type = None
-    profile = None
-
-    if hasattr(user, 'seekerprofile'):
-        profile = user.seekerprofile
-        profile_type = 'seeker'
-    elif hasattr(user, 'employerprofile'):
-        profile = user.employerprofile
-        profile_type = 'employer'
-
-    if not profile:
-        return render(request, '404.html', status=404)
-
-    return render(request, 'app/public-profile.html', {
-        'profile': profile,
-        'profile_type': profile_type
-    })
+        Notification.objects.filter(recipient=request.user, is_read=False).update(is_read=True)
+        return JsonResponse({'success': True, 'unread_count': 0})
+    return JsonResponse({'success': False}, status=400)
 
 
